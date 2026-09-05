@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="กระดานคุมงานโครงการสำหรับวิศวกรโยธา">
+  <title>คุมงานโครงการ</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f5f3;
+      --surface: #ffffff;
+      --surface-soft: #f1f1ef;
+      --text: #171717;
+      --muted: #727272;
+      --line: #dededb;
+      --shadow: 0 12px 35px rgba(0, 0, 0, .055);
+      --accent: #222222;
+      --accent-text: #ffffff;
+      --danger: #a23b3b;
+      --focus: #585858;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #151515;
+      --surface: #202020;
+      --surface-soft: #292929;
+      --text: #f5f5f2;
+      --muted: #b2b2ae;
+      --line: #3b3b3a;
+      --shadow: 0 12px 35px rgba(0, 0, 0, .24);
+      --accent: #f0f0ed;
+      --accent-text: #171717;
+      --danger: #f08a8a;
+      --focus: #d4d4d0;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      line-height: 1.5;
+      transition: background .18s ease, color .18s ease;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .app-shell { max-width: 1600px; margin: 0 auto; padding: 28px clamp(18px, 4vw, 64px) 52px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 40px; }
+    .eyebrow { margin: 0 0 5px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.65rem); letter-spacing: -.055em; line-height: 1.08; }
+    .subtitle { margin: 10px 0 0; color: var(--muted); font-size: .98rem; }
+    .theme-toggle {
+      display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto;
+      border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px;
+      background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+    }
+    .theme-toggle:hover { background: var(--surface-soft); }
+    .theme-icon { width: 1.15em; text-align: center; }
+
+    .board { display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 18px; align-items: start; }
+    .column {
+      min-height: 390px; border: 1px solid var(--line); border-radius: 16px;
+      background: var(--surface-soft); padding: 14px; transition: border-color .16s ease, transform .16s ease;
+    }
+    .column.drag-over { border-color: var(--text); transform: translateY(-2px); }
+    .column-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px 13px; border-bottom: 1px solid var(--line); }
+    .column-title { margin: 0; font-size: 1rem; letter-spacing: -.015em; }
+    .count { min-width: 28px; padding: 2px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .78rem; font-weight: 700; text-align: center; }
+    .card-list { min-height: 210px; padding: 12px 0 4px; }
+    .empty { margin: 8px 3px; color: var(--muted); font-size: .88rem; }
+    .task-card {
+      position: relative; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px; background: var(--surface); box-shadow: 0 3px 10px rgba(0, 0, 0, .025);
+    }
+    .task-card[draggable="true"] { cursor: grab; }
+    .task-card.dragging { opacity: .45; cursor: grabbing; }
+    .task-title { margin: 0 0 13px; font-size: .96rem; font-weight: 600; overflow-wrap: anywhere; }
+    .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+    .secondary-actions, .move-controls { display: flex; gap: 6px; }
+    .icon-button, .move-button, .add-button {
+      border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px;
+      min-height: 34px; padding: 5px 9px; font-weight: 700; font-size: .81rem;
+    }
+    .icon-button:hover, .move-button:hover { background: var(--surface-soft); }
+    .delete-button { color: var(--danger); }
+    .move-button { min-width: 42px; min-height: 42px; font-size: 1.1rem; }
+    .move-button:disabled { cursor: not-allowed; opacity: .3; }
+    .add-button { width: 100%; margin-top: 9px; border-style: dashed; color: var(--muted); }
+    .add-button:hover { border-color: var(--text); color: var(--text); background: var(--surface); }
+
+    .dialog-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.38); }
+    .dialog { width: min(100%, 460px); padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 24px 70px rgba(0,0,0,.28); }
+    .dialog h2 { margin: 0 0 6px; font-size: 1.35rem; letter-spacing: -.03em; }
+    .dialog p { margin: 0 0 18px; color: var(--muted); font-size: .9rem; }
+    .dialog input { width: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--text); }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+    .primary, .cancel { min-height: 42px; border-radius: 9px; padding: 8px 15px; font-weight: 700; }
+    .primary { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); }
+    .cancel { border: 1px solid var(--line); background: transparent; color: var(--text); }
+    .primary:hover { opacity: .86; }
+    .cancel:hover { background: var(--surface-soft); }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 900px) { .board { grid-template-columns: repeat(2, minmax(260px, 1fr)); } }
+    @media (max-width: 640px) {
+      .app-shell { padding: 20px 15px 38px; }
+      .topbar { margin-bottom: 27px; }
+      .theme-toggle { padding: 9px 11px; }
+      .theme-label { display: none; }
+      .board { grid-template-columns: 1fr; gap: 13px; }
+      .column { min-height: 0; }
+      .card-list { min-height: 74px; }
+      .move-controls { display: flex; }
+    }
+    @media (min-width: 641px) { .move-controls { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Civil Engineering Workspace</p>
+        <h1>กระดานคุมงานโครงการ</h1>
+        <p class="subtitle">ติดตามงานตั้งแต่แบบก่อสร้างจนถึงส่งมอบงาน</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับโหมดสี">
+        <span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">โหมดสี</span>
+      </button>
+    </header>
+    <section class="board" id="board" aria-label="กระดานงานคุมโครงการ"></section>
+  </main>
+
+  <div class="dialog-backdrop" id="taskDialog" hidden>
+    <form class="dialog" id="taskForm">
+      <h2 id="dialogTitle">เพิ่มงาน</h2>
+      <p id="dialogHint">ระบุงานที่ต้องติดตามในขั้นตอนนี้</p>
+      <input id="taskInput" name="task" type="text" maxlength="180" required autocomplete="off" placeholder="เช่น ตรวจ Shop Drawing ฐานราก">
+      <div class="dialog-actions">
+        <button class="cancel" id="cancelDialog" type="button">ยกเลิก</button>
+        <button class="primary" type="submit">บันทึกงาน</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'civil-kanban-board-v1';
+      const THEME_KEY = 'civil-kanban-theme-v1';
+
+      // แก้ชื่อคอลัมน์สำหรับรูปแบบการทำงานของคุณได้ตรงนี้เลย
+      const columns = [
+        { id: 'planning', name: 'เตรียมแบบและ BOQ' },
+        { id: 'site', name: 'ประสานหน้างาน' },
+        { id: 'construction', name: 'ควบคุมงานก่อสร้าง' },
+        { id: 'handover', name: 'ตรวจรับและส่งมอบ' }
+      ];
+
+      const board = document.getElementById('board');
+      const dialog = document.getElementById('taskDialog');
+      const form = document.getElementById('taskForm');
+      const input = document.getElementById('taskInput');
+      const dialogTitle = document.getElementById('dialogTitle');
+      const dialogHint = document.getElementById('dialogHint');
+      const cancelDialog = document.getElementById('cancelDialog');
+      const themeToggle = document.getElementById('themeToggle');
+      let activeColumnId = null;
+      let editingTaskId = null;
+      let draggedTaskId = null;
+
+      function loadTasks() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          return Array.isArray(stored) ? stored.filter(validTask) : [];
+        } catch { return []; }
+      }
+      function validTask(task) {
+        return task && typeof task.id === 'string' && typeof task.title === 'string' && columns.some(c => c.id === task.columnId);
+      }
+      let tasks = loadTasks();
+      function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+      function makeId() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+      function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = value;
+        return element.innerHTML;
+      }
+
+      function render() {
+        board.innerHTML = columns.map((column, index) => {
+          const cards = tasks.filter(task => task.columnId === column.id);
+          const cardHtml = cards.length ? cards.map(task => `
+            <article class="task-card" draggable="true" data-task-id="${task.id}">
+              <p class="task-title">${escapeHtml(task.title)}</p>
+              <div class="card-actions">
+                <div class="move-controls" aria-label="ย้ายงาน">
+                  <button class="move-button" type="button" data-move="left" data-task-id="${task.id}" ${index === 0 ? 'disabled' : ''} aria-label="ย้ายไปขั้นตอนก่อนหน้า">←</button>
+                  <button class="move-button" type="button" data-move="right" data-task-id="${task.id}" ${index === columns.length - 1 ? 'disabled' : ''} aria-label="ย้ายไปขั้นตอนถัดไป">→</button>
+                </div>
+                <div class="secondary-actions">
+                  <button class="icon-button" type="button" data-action="edit" data-task-id="${task.id}">แก้ไข</button>
+                  <button class="icon-button delete-button" type="button" data-action="delete" data-task-id="${task.id}">ลบ</button>
+                </div>
+              </div>
+            </article>`).join('') : '<p class="empty">ยังไม่มีงานในขั้นตอนนี้</p>';
+          return `<section class="column" data-column-id="${column.id}">
+            <div class="column-head"><h2 class="column-title">${column.name}</h2><span class="count" aria-label="${cards.length} งาน">${cards.length}</span></div>
+            <div class="card-list">${cardHtml}</div>
+            <button class="add-button" type="button" data-action="add" data-column-id="${column.id}">＋ เพิ่มงาน</button>
+          </section>`;
+        }).join('');
+      }
+
+      function openDialog(columnId, task = null) {
+        activeColumnId = columnId;
+        editingTaskId = task ? task.id : null;
+        dialogTitle.textContent = task ? 'แก้ไขงาน' : 'เพิ่มงาน';
+        dialogHint.textContent = task ? 'ปรับข้อความของการ์ดงานนี้' : `เพิ่มงานในคอลัมน์ “${columns.find(c => c.id === columnId).name}”`;
+        input.value = task ? task.title : '';
+        dialog.hidden = false;
+        setTimeout(() => input.focus(), 0);
+      }
+      function closeDialog() { dialog.hidden = true; form.reset(); activeColumnId = null; editingTaskId = null; }
+
+      function moveTask(taskId, direction) {
+        const task = tasks.find(item => item.id === taskId);
+        if (!task) return;
+        const oldIndex = columns.findIndex(column => column.id === task.columnId);
+        const newIndex = oldIndex + direction;
+        if (newIndex < 0 || newIndex >= columns.length) return;
+        task.columnId = columns[newIndex].id;
+        saveTasks(); render();
+      }
+
+      board.addEventListener('click', event => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        if (button.dataset.action === 'add') openDialog(button.dataset.columnId);
+        if (button.dataset.action === 'edit') {
+          const task = tasks.find(item => item.id === button.dataset.taskId);
+          if (task) openDialog(task.columnId, task);
+        }
+        if (button.dataset.action === 'delete') {
+          const task = tasks.find(item => item.id === button.dataset.taskId);
+          if (task && confirm(`ลบงาน “${task.title}” ใช่หรือไม่?\nการลบนี้กู้คืนไม่ได้`)) {
+            tasks = tasks.filter(item => item.id !== task.id); saveTasks(); render();
+          }
+        }
+        if (button.dataset.move) moveTask(button.dataset.taskId, button.dataset.move === 'left' ? -1 : 1);
+      });
+
+      board.addEventListener('dragstart', event => {
+        const card = event.target.closest('.task-card');
+        if (!card) return;
+        draggedTaskId = card.dataset.taskId;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', draggedTaskId);
+        card.classList.add('dragging');
+      });
+      board.addEventListener('dragend', event => {
+        const card = event.target.closest('.task-card');
+        if (card) card.classList.remove('dragging');
+        board.querySelectorAll('.drag-over').forEach(column => column.classList.remove('drag-over'));
+        draggedTaskId = null;
+      });
+      board.addEventListener('dragover', event => {
+        const column = event.target.closest('.column');
+        if (!column) return;
+        event.preventDefault(); event.dataTransfer.dropEffect = 'move';
+        column.classList.add('drag-over');
+      });
+      board.addEventListener('dragleave', event => {
+        const column = event.target.closest('.column');
+        if (column && !column.contains(event.relatedTarget)) column.classList.remove('drag-over');
+      });
+      board.addEventListener('drop', event => {
+        const column = event.target.closest('.column');
+        if (!column) return;
+        event.preventDefault(); column.classList.remove('drag-over');
+        const taskId = draggedTaskId || event.dataTransfer.getData('text/plain');
+        const task = tasks.find(item => item.id === taskId);
+        if (task && task.columnId !== column.dataset.columnId) {
+          task.columnId = column.dataset.columnId; saveTasks(); render();
+        }
+      });
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const title = input.value.trim();
+        if (!title) return;
+        if (editingTaskId) {
+          const task = tasks.find(item => item.id === editingTaskId);
+          if (task) task.title = title;
+        } else {
+          tasks.push({ id: makeId(), title, columnId: activeColumnId });
+        }
+        saveTasks(); render(); closeDialog();
+      });
+      cancelDialog.addEventListener('click', closeDialog);
+      dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog(); });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && !dialog.hidden) closeDialog(); });
+
+      function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        themeToggle.querySelector('.theme-icon').textContent = theme === 'dark' ? '☀' : '◐';
+        themeToggle.querySelector('.theme-label').textContent = theme === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด';
+      }
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      themeToggle.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, next); applyTheme(next);
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
